@@ -1,0 +1,107 @@
+# -*- coding: UTF-8 -*-
+import requests,time
+print(">>>>>>> Tool is written by Đăng Tính <<<<<<")
+from fbchat import log, Client
+email=input("Điền tài khoản facebook: ")
+password=input("Điền mật khẩu facebook: ")
+GuileUser = []
+BlockUser = []
+idfirst=[]
+menu = """
+<= Đây là Bot chat của TÔI =>
+*Tạm dừng Bot chat: "-stop"
+*Khởi động lại Bot chat: "-restart"
+*Hiện hướng dẫn chat: "menu"
+*Tra dự báo thời tiết chat : "-thời tiết" + tên khu vực
+*Tra cứu khuyến mại :"-khuyến mại"+ tên nhà mạng(viettel, mobifone, vinaphone)
+*Xem ảnh gái xinh: "girl"
+*Xem cung hoàng đạo: "-cung"+ tên cung hoàng đạo
+*Bói vui theo tên: "-bói tên" + tên bạn_tên người ấy
+"""
+start=[]
+class Echobot(Client):
+    def onMessage(self,author_id, message_object, thread_id, thread_type, **kwargs):
+        user = client.fetchUserInfo(author_id)[author_id]
+        if message_object.text == "-stop":
+            self.sendMessage(" Bot đã dừng", thread_id=thread_id, thread_type=thread_type)
+            BlockUser.append(thread_id)
+        if message_object.text == "-restart":
+            self.sendMessage("Đã khởi động lại bot", thread_id=thread_id, thread_type=thread_type)
+            if thread_id in BlockUser:
+                BlockUser.remove(thread_id)
+        if author_id != self.uid:
+            if thread_id not in BlockUser:
+                if thread_id not in idfirst:
+                    self.sendMessage(menu, thread_id=thread_id, thread_type=thread_type)
+                    idfirst.append(thread_id)
+                if  message_object.text is not None:
+                    #dự báo thời tiết
+                    if "-thời tiết" in message_object.text:
+                        s=0
+                        message_object.text = message_object.text.replace("-thời tiết","")
+                        vitri=message_object.text
+                        link  = requests.get('https://api.trolyfacebook.com/thoitiet/?noidung='+vitri[1:]).json()                    
+                        for wt in link['messages']:
+                            WT=wt['text']
+                            self.sendMessage(WT, thread_id=thread_id, thread_type=thread_type)
+                            s=s+1
+                            if s==3:
+                                break
+                        return
+                    ##khuyen mai
+                    if "-khuyến mại" in message_object.text:
+                        message_object.text = message_object.text.replace("-khuyến mại","")
+                        link  = requests.get('https://api.trolyfacebook.com/khuyenmai/?network='+message_object.text[1:]).json()
+                        for km in link['messages']:
+                            KM=km['text']                    
+                            self.sendMessage(KM, thread_id=thread_id, thread_type=thread_type)
+                        return
+                    ##*Xem ảnh gái xinh: "-girl"
+                    if "girl" in message_object.text:
+                        link  = requests.get('https://api.trolyfacebook.com/gaixinh/').json()                    
+                        try:
+                            for km in link['messages']:
+                               a=km['attachment']
+                               b=a['payload']
+                               c=b['url']
+                        except:
+                            pass
+                        client.sendRemoteImage(c, message="Xem đi nà, nhớ giữ gìn sức khỏe nha :)", thread_id=thread_id, thread_type=thread_type)
+                        return
+                    ##*Xem cung hoàng đạo: "-zo"+ tên cung hoàng đạo
+                    if "-cung" in message_object.text:
+                        message_object.text = message_object.text.replace("-cung","")
+                        link  = requests.get('https://api.kma-chatbot.com/cunghoangdao.php?cung='+message_object.text[1:]).json()                    
+                        for zo in link['messages']:
+                            ZO=zo['text']
+                            self.sendMessage(ZO, thread_id=thread_id, thread_type=thread_type)
+                        return
+                    ##*Bói vui theo tên: "-fo" + tên bạn_tên người ấy
+                    if "-bói tên" in message_object.text:
+                        message_object.text = message_object.text.replace("-bói tên","")
+                        name=message_object.text[1:]
+                        dem=int(name.find("_"))
+                        name1=name[:dem]
+                        name2=name[dem+1:]
+                        link=requests.get('http://vainvn.info/apigif/boitheoten.php?tenban='+name1+'&tennguoiay='+name2).json()
+                        for fo in link['messages']:
+                            FO=fo['text']
+                            self.sendMessage(FO, thread_id=thread_id, thread_type=thread_type)
+                        return                
+                    if "menu" in message_object.text :
+                        self.sendMessage(menu, thread_id=thread_id, thread_type=thread_type)
+                        return
+                    else:
+                        messerror=["nhìn mặt em đẹp,mà sao không có não, em toàn hỏi những câu anh không hiểu, hay em dạy anh với nhá !",
+                                   "Có vẽ em đang bấm bậy điện thoại,nói toàn những thứ anh không hiểu,làm ơn nói gì đó để anh hiểu đi :(",
+                                   "Anh không hiểu",
+                                   "Anh không cần ăn cơm, anh chỉ ăn điện thôi, chỉ cần em sạc điện thoại tứ là anh đang ăn đó !"
+                                   ]
+                        link  = requests.get('http://vina4u.vn/babe/api.php?text='+message_object.text+'&gen=&name=').json()
+                        for i in link['messages']:
+                            if i['text'] in messerror:
+                                self.sendMessage(" :) ", thread_id=thread_id, thread_type=thread_type)
+                            else:
+                                self.sendMessage(i['text'], thread_id=thread_id, thread_type=thread_type)
+client = Echobot(email,password)
+client.listen()
