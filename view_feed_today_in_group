@@ -1,0 +1,24 @@
+import requests, time,json,datetime
+from datetime import datetime
+token="" #token your
+payload={"method":"GET","access_token":token}
+id_view="" #id page or group
+a=requests.get("https://graph.facebook.com/"+id_view+"/feed",params=payload).json()
+stt=0
+time_now=datetime.now()
+today=str(time_now)[:10]
+while True:
+    try:
+        for i in a['data']:
+            today1=i["created_time"][:10]
+            if today ==today1:
+                stt=stt+1
+                try:
+                    print(i['from']['name']+" || "+i['message'])
+                    print("link: https://facebook.com/"+i['id'])
+                    print("==========="+str(stt))
+                except:
+                    pass            
+        a=requests.get(a['paging']['next']).json()
+    except:
+        break
